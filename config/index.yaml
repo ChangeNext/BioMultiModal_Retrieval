@@ -1,0 +1,24 @@
+mulimr_dir: "/workspace/MultiMR/"
+embed_dir_name: "embedding/"
+model:
+  name: "CLIPScoreFusion"
+  pretrained_clip_model_dir: "ViT-B/32" 
+  ckpt_config: 
+    ckpt_dir: "checkpoint/"
+    ckpt_name: "vit-b-32_epoch_1.pth"
+
+dataset:
+  name: "Jiiwonn/roco2-question-id-dataset"
+
+mid_name: "cand"
+split: "test"
+query_modes: "img_txt"
+device: "cuda"
+
+index_config:
+    faiss_config:
+        idx_type: Flat
+        dim: 512
+        metric: METRIC_INNER_PRODUCT        
+    embed_dir_name: "embed"  # embeddings will be loaded from uniir_dir/embed/experiment.path_suffix
+    index_dir_name: "index"

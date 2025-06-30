@@ -1,0 +1,53 @@
+# --- Training Configuration ---
+trainer_config:
+  learning_rate: 1e-5
+  num_train_epochs: 20
+  warmup_steps: 0
+  eval_steps: 500
+  print_freq: 50
+  batch_size: 32
+  eval_size: 16
+  seed: 42
+  accumulation_steps: 8 
+  pretrained_clip_model_dir: "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"
+  # pretrained_clip_model_dir: ViT-L/14
+  gradient_accumulation_steps: 1
+  device: "cuda" 
+  clip_grad_norm: 1.0
+  use_amp: true 
+  num_workers: 2 
+  merge: score # weight mlp
+
+model:
+  ckpt_config: 
+    ckpt_dir: "/workspace/MultiMR/checkpoint/"
+  # short_name: VIT-L-14/score/simclr_false/
+  # short_name: ViT-B/32/score/simclr_false/
+  short_name: biomedclip/score/simclr_false
+  
+evaluator:
+    enable_eval: False
+    eval_freq: 1
+    print_freq: 10
+
+# --- Dataset Configuration ---
+dataset:
+  name: "Jiiwonn/roco2-question-id-dataset"
+  train_split: "train" 
+  validation_split: "validation" 
+  simclr: False
+  download_root: null # 
+  add_task: True
+  
+
+# --- Evaluation Configuration ---
+evaluation:
+  print_freq: 50
+
+# --- Model Checkpoint Configuration ---
+model_checkpoint:
+  save_dir: "/workspace/MultiMR/checkpoints/" 
+  resume_training: None
+  save_best_only: true 
+  metric_for_best: "loss" 
+  mode_for_best: "min" 

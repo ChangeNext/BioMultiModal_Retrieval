@@ -1,0 +1,17 @@
+mulimr_dir: "/workspace/MultiMR/"
+mulimr_data_dir: "embedding/"
+#expt_name: clip #biomedclip
+device: cuda
+model:
+  name: CLIPScoreFusion #CLIPScoreFusion CLIPBIOcoreFusion
+  pretrained_clip_model_dir: ViT-L/14 #hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
+  merge: weight
+  ckpt_config: 
+    ckpt_dir: "checkpoint/"
+    # ckpt_name: vit-l-14/simclr_true/add_task/_epoch_9.pth
+    ckpt_name: vit-l-14/weight/_epoch_14.pth
+retrieval_config:
+  results_dir_name: retrieval_results
+  qrel_dir_name:  qrels # QREL 파일이 있는 디렉토리
+  embed_dir_name: embedding # 쿼리 임베딩 파일이 있는 디렉토리
+  index_dir_name: test # FAISS 인덱스 파일이 있는 디렉토리

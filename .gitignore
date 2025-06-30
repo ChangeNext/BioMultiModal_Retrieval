@@ -1,0 +1,6 @@
+.gradio/
+checkpoint/
+embedding/
+image/
+retrieval_results/
+runs/

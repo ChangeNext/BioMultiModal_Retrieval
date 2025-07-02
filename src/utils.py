@@ -341,7 +341,6 @@ def train_one_epoch(model, data_loader, optimizer, epoch, device, scheduler, glo
             # optimizer step with scaler
             scaler.step(optimizer)
             scaler.update()
-
             model.zero_grad()
             scheduler.step()
             accumulation_counter = 0
@@ -357,10 +356,58 @@ def train_one_epoch(model, data_loader, optimizer, epoch, device, scheduler, glo
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 
+def train_one_epoch_(model, dataloader, optimizer, accelerator, epoch, writer=None, config=None):
+    model.train()
+    
+    total_loss = 0.0
+    total_accuracy = 0.0
+    total_batches = 0
+
+    accumulation_steps = config.trainer_config.gradient_accumulation_steps
+    print_freq = config.trainer_config.print_freq
+
+    for step, batch in enumerate(dataloader):
+        with accelerator.accumulate(model):
+            with accelerator.autocast():  # ✅ AMP 사용
+                outputs = model(batch)
+                loss = outputs["loss"]
+                acc = outputs.get("accuracy", 0.0)
+                
+            accelerator.backward(loss)
+
+            if accelerator.sync_gradients:
+                # accelerator.clip_grad_norm_(model.parameters(), config.trainer_config.max_grad_norm)
+                optimizer.step()
+                optimizer.zero_grad()
+
+            total_loss += loss.item()
+            total_accuracy += acc if isinstance(acc, float) else acc.item()
+            total_batches += 1
+
+            # ✅ TensorBoard logging
+            if writer and accelerator.is_main_process:
+                writer.add_scalar("train/loss", loss.item(), epoch * len(dataloader) + step)
+                writer.add_scalar("train/inbatch_accuracy", acc if isinstance(acc, float) else acc.item(), epoch * len(dataloader) + step)
+
+            if step % print_freq == 0 and accelerator.is_main_process:
+                avg_loss = total_loss / (total_batches + 1e-8)
+                avg_acc = total_accuracy / (total_batches + 1e-8)
+                print(f"[Epoch {epoch}] Step {step}/{len(dataloader)} | Loss: {avg_loss:.4f} | Acc: {avg_acc:.4f}")
+
+    avg_loss = total_loss / total_batches
+    avg_acc = total_accuracy / total_batches
+
+    if accelerator.is_main_process:
+        print(f"Train Epoch {epoch} Finished. Avg Loss: {avg_loss:.4f}, Avg Accuracy: {avg_acc:.4f}")
+
+    return {
+        "loss": avg_loss,
+        "accuracy": avg_acc,
+    }
+
 
 @torch.no_grad()
 def eval_engine(model, writer, data_loader, device):
-
     model.eval()
     metric_logger = MetricLogger(delimiter="  ")
     metric_logger.add_meter("loss", SmoothedValue(window_size=1, fmt="{value:.4f}"))

@@ -18,9 +18,9 @@ def build_model_from_config(config):
     model_config = config.model
     model=None
     if model_config.merge== "score":
-        from src.model import CLIPScoreFusion
-        from src.models.biomodel import CLIPBIOcoreFusion
-        model = CLIPBIOcoreFusion(
+        from src.models.model import CLIPScoreFusion
+        # from src.models.biomodel import CLIPBIOcoreFusion
+        model = CLIPScoreFusion(
             model_name=model_config.pretrained_clip_model_dir,
             device = config.device,
             )
@@ -78,10 +78,7 @@ def main(config):
     model = build_model_from_config(config)
     model.eval()
     
-    # if model_name == "CLIPBIOcoreFusion":
-    image_size = (224, 224)
-    # else:
-    # image_size = (model.clip_model.visual.input_resolution, model.clip_model.visual.input_resolution)
+    image_size = (model.clip_model.visual.input_resolution, model.clip_model.visual.input_resolution)
         
     # Ensure the model has an 'encode' method before generating embeddings
     if not callable(getattr(model, "get_img_preprocess_fn")):

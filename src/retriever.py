@@ -11,16 +11,14 @@ import gc
 
 import faiss
 import pickle
-import torch # torch.cuda.empty_cache()를 위해 추가
+import torch
 
 def get_mbeir_task_name(task_id):
     task_names = {
         0: "Image-to-Text Retrieval",
-        # 필요하다면 다른 task_id에 대한 이름을 추가하세요.
     }
     return task_names.get(task_id, f"Unknown Task {task_id}")
 
-# QREL 파일 형식: query_id Q0 doc_id relevance_score task_id
 def load_qrel(qrel_path):
     qrel = defaultdict(set)
     qid_to_taskid = {}
@@ -45,10 +43,8 @@ def load_qrel(qrel_path):
     return qrel, qid_to_taskid
 
 def create_index(config):
-    # 각 모달리티 조합에 대해 인덱스를 생성하고 저장합니다.
     modality_suffixes = {"i": "img_only", "t": "txt_only", "it": "img_txt"}
-    
-    # 생성된 인덱스들의 경로를 저장할 딕셔너리
+
     indexed_paths = {}
 
     for suffix_key, modality_type in modality_suffixes.items():
@@ -80,7 +76,7 @@ def create_index(config):
         
         if faiss_config.dim != d:
              print(f"Warning: Index dimension mismatch for {modality_type}. Config: {faiss_config.dim}, Data: {d}. Adjusting config.")
-             faiss_config.dim = d # config의 dim을 실제 임베딩 차원으로 업데이트
+             faiss_config.dim = d
         
         metric = getattr(faiss, faiss_config.metric)
         cpu_index = faiss.index_factory(
@@ -145,13 +141,13 @@ def compute_mrr(relevant_docs, retrieved_indices):
     Returns:
         float: Reciprocal Rank for the query (1/rank) or 0.0 if no relevant doc found.
     """
-    if not relevant_docs: # 관련 문서가 없으면 계산할 수 없음
+    if not relevant_docs: 
         return 0.0
 
     for rank, doc_id in enumerate(retrieved_indices):
         if doc_id in relevant_docs:
-            return 1.0 / (rank + 1) # rank는 0부터 시작하므로 +1
-    return 0.0 # 관련 문서를 찾지 못한 경우 (fallback)
+            return 1.0 / (rank + 1) 
+    return 0.0 
 
 def compute_recall_at_k(relevant_docs, retrieved_indices, k):
     """
@@ -166,7 +162,7 @@ def compute_recall_at_k(relevant_docs, retrieved_indices, k):
     if not relevant_docs:
         return 0.0
 
-    # retrieved_indices는 이미 k개로 제한되어 있으므로, 단순히 처음부터 k개를 사용
+
     top_k_retrieved_indices_set = set(retrieved_indices[:k]) 
     relevant_docs_set = set(relevant_docs)
 
@@ -218,20 +214,19 @@ def search_index(query_embed_path, cand_index_path, batch_size, num_cand_to_retr
         all_distances.append(distances)
         all_indices.append(indices)
     
-    # --- GPU 및 CPU 인덱스 메모리 해제 로직 시작 ---
-    if ngpus > 0 and 'index_gpu' in locals(): # 'index_gpu'가 정의되었을 때만 del 수행
+
+    if ngpus > 0 and 'index_gpu' in locals(): 
         del index_gpu
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             print("CUDA cache emptied after GPU search.")
 
-    del index_cpu # CPU 인덱스도 사용 후 메모리 해제
+    del index_cpu 
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         print("CUDA cache emptied after CPU index clean-up.")
-    # --- GPU 및 CPU 인덱스 메모리 해제 로직 끝 ---
 
     final_distances = np.vstack(all_distances)
     final_indices = np.vstack(all_indices)

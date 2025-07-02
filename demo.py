@@ -8,7 +8,7 @@ from PIL import Image
 import transformers
 from datasets import load_dataset
 import torch
-from src.model import CLIPScoreFusion
+from src.models.model import CLIPScoreFusion
 from data.dataset import QueryCollator
 from src.embedder import build_model_from_config
 
@@ -49,9 +49,6 @@ model.to(config.device)
 model.eval()
 img_preprocess_fn = model.get_img_preprocess_fn() 
 
-# if  model_name == "CLIPBIOcoreFusion":
-#     image_size = (224, 224)
-# else:
 image_size = (model.clip_model.visual.input_resolution, model.clip_model.visual.input_resolution)
         
 H, W = image_size
@@ -148,13 +145,13 @@ def query_interface(text_query, image_query_pil, top_k=10):
         else:
             image_query_pil = img_preprocess_fn(image_query_pil.convert("RGB"))
         query_img_tensor, query_img_mask_val = _get_padded_image_with_mask(image_query_pil)
+        
         print("text_mask: ",query_txt_mask_val)
         print("image_mask: ", query_img_mask_val)
+        
         query_img_tensor = torch.tensor(query_img_tensor).unsqueeze(0)
         query_img_mask = torch.tensor([query_img_mask_val], dtype=torch.long)
         
-        # query_img_tensor = torch.tensor(query_img_tensor).unsqueeze(0).to(device) 
-        # query_img_mask = torch.tensor([query_img_mask_val], dtype=torch.long).to(device)
 
         batch_for_model = {
             "txt_batched": text_inputs.to(config.device),
@@ -222,7 +219,7 @@ for i in range(TOP_K_DEMO):
 
 
 with gr.Blocks(title="Multimoda Retriever") as demo:
-    gr.Markdown("파일럿 프로젝트 Demo")
+    gr.Markdown("의료 멀티모달 검색 Demo")
     gr.Markdown("Enter a text query or upload a radiology image to find relevant documents (images and texts).")
 
     with gr.Row(): 

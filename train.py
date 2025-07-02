@@ -6,9 +6,10 @@ import logging
 import random
 import numpy as np
 
+from omegaconf import OmegaConf
 from datasets import load_dataset
 from data.dataset import CustomDatasetDictDataset, CustomDatasetDictDataset_, MainCollator, Mode
-from src.model import CLIPScoreFusion, CLIPWeightFusion, CLIPMLPFusion
+from src.models.model import CLIPScoreFusion, CLIPWeightFusion, CLIPMLPFusion
 from src.models.biomodel import CLIPBIOcoreFusion
 import torch
 from torch.optim import AdamW
@@ -26,15 +27,6 @@ def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    
-def dict_to_namespace(d):
-    namespace = SimpleNamespace()
-    for key, value in d.items():
-        if isinstance(value, dict):
-            setattr(namespace, key, dict_to_namespace(value))
-        else:
-            setattr(namespace, key, value)
-    return namespace
 
 def log_results(train_stats, val_stats, test_stats, epoch=None, best_epoch=None):
     log_stats = {}
@@ -128,27 +120,13 @@ def train(
             log_stats = log_results(train_stats, None, None, epoch, best_epoch)
         else:
             val_status = eval_engine(model, writer, val_loader, config.trainer_config.device)
-        #     try:
-        #         inbatch_accuracy = float(val_status["inbatch_accuracy"])
-        #     except ValueError:
-        #         print(f"Error: Expected a number but got '{val_status['inbatch_accuracy']}'")
-        #         inbatch_accuracy = 100.0
-        
-        # save_checkpoint(model, optimizer, scheduler, epoch, scaler, config)
-        # if inbatch_accuracy >= best_inbatch_accuracy:
-        #         # if utils.is_main_process():
-        #         #     save_checkpoint(model_without_ddp, optimizer, scheduler, epoch, scaler, config)
-        #         best_inbatch_accuracy = inbatch_accuracy
-        #         best_epoch = epoch
-        # log_stats = log_results(train_stats, val_status, None, epoch, best_epoch)
             
             try:
                 validation_loss = float(val_status["loss"])
             except ValueError:
                 print(f"Error: Expected a number but got '{val_status['loss']}' for validation loss")
                 validation_loss = float('inf')
-            if epoch == 10:
-                save_checkpoint(model, optimizer, scheduler, epoch, scaler, config, best=False)    
+            save_checkpoint(model, optimizer, scheduler, epoch, scaler, config, best=False)    
             if validation_loss <= best_validation_loss:
                 best_validation_loss = validation_loss
                 save_checkpoint(model, optimizer, scheduler, epoch, scaler, config, best=True)
@@ -165,7 +143,7 @@ def main(config):
     print(f"Merge Style: {config.trainer_config.merge}")
     model=None
     if config.trainer_config.merge== "score":
-        model = CLIPBIOcoreFusion(
+        model = CLIPScoreFusion(
             model_name=config.trainer_config.pretrained_clip_model_dir,
             device = config.trainer_config.device
         )
@@ -193,29 +171,25 @@ def main(config):
     dataset = load_dataset(config.dataset.name)
 
     # If resume training, load the checkpoint
-    # ckpt_config = config.model_checkpoint
-    # if ckpt_config.resume_training:
-    #     checkpoint_path = os.path.join(config.uniir_dir, ckpt_config.ckpt_dir, ckpt_config.ckpt_name)
-    #     assert os.path.exists(checkpoint_path), f"Checkpoint file {checkpoint_path} does not exist."
-    #     logger.info(f"loading CLIPScoreFusion checkpoint from {checkpoint_path}")
-    #     checkpoint = torch.load(checkpoint_path)
-    #     model.load_state_dict(checkpoint["model"])
-    #     optimizer.load_state_dict(checkpoint["optimizer"])
-    #     scaler.load_state_dict(checkpoint["scaler"])
+    ckpt_config = config.model_checkpoint
+    if ckpt_config.resume_training:
+        checkpoint_path = os.path.join(config.save_dir)
+        assert os.path.exists(checkpoint_path), f"Checkpoint file {checkpoint_path} does not exist."
+        logger.info(f"loading CLIPScoreFusion checkpoint from {checkpoint_path}")
+        checkpoint = torch.load(checkpoint_path)
+        model.load_state_dict(checkpoint["model"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        scaler.load_state_dict(checkpoint["scaler"])
     
     model.train()
     
-    # Prepare datasets and dataloaders
     logger.info("Preparing dataset ...")  # Note printing only available in the main process
     logger.info(f"Loading dataset from {config.dataset.name}")
     
     img_preprocess_fn = model.get_img_preprocess_fn()
     tokenizer_fn = model.get_tokenizer()
-    
-    if model.model_name.startswith('hf-hub:'):
-        image_size = (224, 224)
-    else:
-        image_size = (model.clip_model.visual.input_resolution, model.clip_model.visual.input_resolution)
+
+    image_size = (model.clip_model.visual.input_resolution, model.clip_model.visual.input_resolution)
     
     if config.dataset.add_task:
         print("add_task")
@@ -296,9 +270,20 @@ def main(config):
         epoch,
     )
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="train")
+    parser.add_argument("--config_path", default="./config/config.yaml",help="Path to the config file.")
+    return parser.parse_args()
+
+
+
 if __name__ == "__main__":
-    with open('/workspace/MultiMR/config/config.yaml', 'r') as f:
-        config_dict = yaml.safe_load(f)
-    config = dict_to_namespace(config_dict)
+    args = parse_arguments()
+    config = OmegaConf.load(args.config_path)
+    
+    
+    # with open('/workspace/MultiMR/config/config.yaml', 'r') as f:
+    #     config_dict = yaml.safe_load(f)
+    # config = dict_to_namespace(config_dict)
     set_seed(config.trainer_config.seed)
     main(config)

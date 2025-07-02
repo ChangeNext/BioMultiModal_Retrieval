@@ -4,3 +4,4 @@ embedding/
 image/
 retrieval_results/
 runs/
+.env

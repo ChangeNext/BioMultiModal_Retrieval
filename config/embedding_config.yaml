@@ -3,9 +3,9 @@ embed_dir_name: embedding/
 #expt_name: VIT-L-14 #biomedclip clip
 
 model:
-  name: CLIPBIOcoreFusion #CLIPScoreFusion CLIPBIOcoreFusion
-  # pretrained_clip_model_dir: ViT-B/32
-  pretrained_clip_model_dir: hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
+  name: CLIPScoreFusion #CLIPScoreFusion CLIPBIOcoreFusion
+  pretrained_clip_model_dir: ViT-L/14
+  # pretrained_clip_model_dir: hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
   merge: score
   ckpt_config: 
     ckpt_dir: checkpoint/  
@@ -22,7 +22,7 @@ model:
     
     # ckpt_name: vit-l-14/score/simclr_false/_epoch_10.pth
     # ckpt_name: vit-b/32/score/simclr_false/_epoch_10.pth
-    ckpt_name: biomedclip/score/simclr_false_epoch_10.pth
+    ckpt_name: vit-l-14/final_epoch_best.pth
     
     
 dataset:

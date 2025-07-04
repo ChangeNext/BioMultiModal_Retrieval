@@ -36,13 +36,16 @@ def build_model_from_config(config):
             model_name=model_config.pretrained_clip_model_dir,
             device = config.device,
         ) 
-
+    # model= accelerator.prepare(model)
+    
     model.float()
     
     ckpt_config = model_config.ckpt_config
+    # accelerator.load_state(ckpt_config)
     checkpoint_path = os.path.join(config.mulimr_dir, ckpt_config.ckpt_dir, ckpt_config.ckpt_name)
     assert os.path.exists(checkpoint_path), f"Checkpoint file {checkpoint_path} does not exist."
     print(f"loading CLIPScoreFusion checkpoint from {checkpoint_path}")
+    # accelerator.load_state(ckpt_config)
     model.load_state_dict(torch.load(checkpoint_path, weights_only=False)["model"])
 
     return model

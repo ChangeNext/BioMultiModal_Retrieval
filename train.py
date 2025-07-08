@@ -10,7 +10,6 @@ from omegaconf import OmegaConf
 from datasets import load_dataset
 from data.dataset import CustomDatasetDictDataset, CustomDatasetDictDataset_, MainCollator, Mode
 from src.models.model import CLIPScoreFusion, CLIPWeightFusion, CLIPMLPFusion
-from src.models.biomodel import CLIPBIOcoreFusion
 import torch
 from torch.optim import AdamW
 import torch.nn.utils as nn_utils
@@ -93,7 +92,7 @@ def train(
         0,
         0.0,
         0.0,
-    )  # TODO: global_step is not used.
+    ) 
     best_epoch = 0
     model.zero_grad()
     best_validation_loss = float('inf')
@@ -138,20 +137,25 @@ def train(
     
                 
 def main(config):
-    print("Creating CLIP-SF model...")
+
     config.trainer_config.device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Merge Style: {config.trainer_config.merge}")
     model=None
+    # Merge Score
     if config.trainer_config.merge== "score":
         model = CLIPScoreFusion(
             model_name=config.trainer_config.pretrained_clip_model_dir,
             device = config.trainer_config.device
         )
+        
+    # Merge Weight
     elif config.trainer_config.merge== "weight":
         model = CLIPWeightFusion(
             model_name=config.trainer_config.pretrained_clip_model_dir,
             device = config.trainer_config.device
         )
+        
+    # Merge MLP
     elif config.trainer_config.merge== "mlp":
         model = CLIPMLPFusion(
             model_name=config.trainer_config.pretrained_clip_model_dir,
@@ -170,8 +174,8 @@ def main(config):
     
     dataset = load_dataset(config.dataset.name)
 
-    # If resume training, load the checkpoint
     ckpt_config = config.model_checkpoint
+    ## resume train
     if ckpt_config.resume_training:
         checkpoint_path = os.path.join(config.save_dir)
         assert os.path.exists(checkpoint_path), f"Checkpoint file {checkpoint_path} does not exist."
@@ -183,7 +187,7 @@ def main(config):
     
     model.train()
     
-    logger.info("Preparing dataset ...")  # Note printing only available in the main process
+    logger.info("Preparing dataset ...")  
     logger.info(f"Loading dataset from {config.dataset.name}")
     
     img_preprocess_fn = model.get_img_preprocess_fn()
@@ -191,43 +195,24 @@ def main(config):
 
     image_size = (model.clip_model.visual.input_resolution, model.clip_model.visual.input_resolution)
     
-    if config.dataset.add_task:
-        print("add_task")
-        train_dataset = CustomDatasetDictDataset_(
-                dataset = dataset,
-                dataset_dict_split="train",
-                img_preprocess_fn=img_preprocess_fn,
-                image_size = image_size[0],
-                simclr=config.dataset.simclr,
-                query_modes=["img_txt", "img_only", "txt_only"]
-            )
-        eval_dataset = CustomDatasetDictDataset_(
-                dataset = dataset,
-                dataset_dict_split="validation",
-                img_preprocess_fn=img_preprocess_fn,
-                image_size = image_size[0],
-                simclr=False,
-                query_modes=["img_txt"]
-            )
-    else:
-        print("no_task")
-        train_dataset = CustomDatasetDictDataset(
-                dataset = dataset,
-                dataset_dict_split="train",
-                img_preprocess_fn=img_preprocess_fn,
-                image_size = image_size[0],
-                simclr=config.dataset.simclr,
-                query_modes=["img_txt", "img_only", "txt_only"]
-            )
-        eval_dataset = CustomDatasetDictDataset(
-                dataset = dataset,
-                dataset_dict_split="validation",
-                img_preprocess_fn=img_preprocess_fn,
-                image_size = image_size[0],
-                simclr=False,
-                query_modes=["img_txt"]
-            )
+    train_dataset = CustomDatasetDictDataset_(
+            dataset = dataset,
+            dataset_dict_split="train",
+            img_preprocess_fn=img_preprocess_fn,
+            image_size = image_size[0],
+            simclr=config.dataset.simclr,
+            query_modes=["img_txt", "img_only", "txt_only"]
+        )
     
+    eval_dataset = CustomDatasetDictDataset_(
+            dataset = dataset,
+            dataset_dict_split="validation",
+            img_preprocess_fn=img_preprocess_fn,
+            image_size = image_size[0],
+            simclr=False,
+            query_modes=["img_txt"]
+        )
+    ## DataLoader
     collator = MainCollator(
         tokenizer=tokenizer_fn, 
         image_size=image_size, 
@@ -272,18 +257,21 @@ def main(config):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="train")
-    parser.add_argument("--config_path", default="./config/config.yaml",help="Path to the config file.")
+    parser.add_argument("--config_path", default="./config/train.yaml", help="Path to the config file.")
+    parser.add_argument("--batch_size", default="32")
+    parser.add_argument("--epochs", default=10)
+    parser.add_argument("--pretrained_clip_model_dir", default="ViT-L/14", help="Pretrain Model")
+    parser.add_argument("--merge", default="weight", help="Merge type")
     return parser.parse_args()
-
 
 
 if __name__ == "__main__":
     args = parse_arguments()
     config = OmegaConf.load(args.config_path)
     
-    
-    # with open('/workspace/MultiMR/config/config.yaml', 'r') as f:
-    #     config_dict = yaml.safe_load(f)
-    # config = dict_to_namespace(config_dict)
+    config.trainer_config.batch_size = args.batch_size
+    config.trainer_config.merge = args.merge
+    config.trainer_config.pretrained_clip_model_dir = args.pretrained_clip_model_dir
+    config.trainer_config.num_train_epochs = args.epochs
     set_seed(config.trainer_config.seed)
     main(config)

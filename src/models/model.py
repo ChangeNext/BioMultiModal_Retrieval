@@ -321,4 +321,3 @@ class CLIPMLPFusion(nn.Module):
         )
         assert embeddings.size(0) == len(id_list), "embeddings and id_batched must have the same batch size."
         return embeddings, id_list
-

@@ -1,25 +1,17 @@
 mulimr_dir: "/workspace/MultiMR/"
 embed_dir_name: embedding/
 mulimr_data_dir: "/workspace/MultiMR/embedding/"
-# expt_name:  vit-l-14 #biomedclip clip
-# model_name: vit-l-14/score/simclr_false/_epoch_10.pth
-# model_name: vit-b/32/score/simclr_false/_epoch_10.pth
-model_name: biomedclip/score/simclr_false_epoch_10.pth
-# model_name: vit-l-14/weight/_epoch_10.pth
-# model_name: vit-l-14/simclr_true/add_task/_epoch_9.pth
-# model_name: vit-l-14/simcl/r_false/_epoch_10.pth
-# model_name: vit-l-14/simcl/r_false/_epoch_10.pth
-
+model_name: vit-l-14/weight/_epoch_10.pth
 split: test
 experiment:
-  path_suffix: my_rocov2_exp_test_img_txt # 임베딩 생성 시 사용한 것과 동일한 실험명
+  path_suffix: my_rocov2_exp_test_img_txt 
 
 index_config:
     faiss_config:
         idx_type: Flat
         dim: 768
         metric: METRIC_INNER_PRODUCT        
-    embed_dir_name: embed  # embeddings will be loaded from uniir_dir/embed/experiment.path_suffix
+    embed_dir_name: embed  #
     index_dir_name: index
     cand_pools_config: # FAISS 인덱스를 생성할 후보 풀 설정
       enable_idx: True
@@ -27,19 +19,19 @@ index_config:
 
 retrieval_config:
   results_dir_name: retrieval_results
-  qrel_dir_name:  qrels # QREL 파일이 있는 디렉토리
-  embed_dir_name: embedding # 쿼리 임베딩 파일이 있는 디렉토리
+  qrel_dir_name:  qrels # QREL dir
+  embed_dir_name: embedding 
 
 
-  raw_retrieval: False # 원본 검색 결과 (JSONL)를 저장할지 여부
-  retrieve_image_text_pairs: False # 이미지-텍스트 보완 검색 활성화 여부 (현재 데이터셋에선 False 권장)
-  write_to_tsv: True # TSV 결과 파일 저장 여부
+  raw_retrieval: False 
+  retrieve_image_text_pairs: False 
+  write_to_tsv: True 
 
   test_datasets_config:
-    enable_retrieve: True # 테스트 셋에 대해 검색을 활성화
-    datasets_name: ["rocov2-questions-radiology"] # 쿼리 데이터셋 이름 (config.yaml에는 대소문자 무관하지만, 코드 내에서 .lower() 됨)
-    correspond_cand_pools_name: ["rocov2-questions-radiology"] # 해당 쿼리 데이터셋에 대응하는 후보 풀 이름
-    correspond_qrels_name: ["rocov2-questions-radiology"] # 해당 데이터셋의 QREL 파일 이름 부분 (예: mbeir_rocov2-questions-radiology_test_qrels.txt)
+    enable_retrieve: True 
+    datasets_name: ["rocov2-questions-radiology"] 
+    correspond_cand_pools_name: ["rocov2-questions-radiology"] 
+    correspond_qrels_name: ["rocov2-questions-radiology"]
     correspond_metrics_name: ["Recall@1, Recall@5, Recall@10, Recall@50, Recall@100"] # 평가할 지표
 
 

@@ -1,3 +1,5 @@
+# make qrel.txt(gt)
+
 import os
 import json 
 from datasets import load_dataset 

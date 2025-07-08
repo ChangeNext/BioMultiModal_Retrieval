@@ -448,13 +448,16 @@ def run_retrieval(config, indexed_paths):
 def parse_arguments():
     parser = argparse.ArgumentParser(description="retrieval")
     parser.add_argument("--config_path", default="./config/retrieval.yaml",help="Path to the config file.")
+    parser.add_argument("--ckpt_name", default="vit-l-14/weight/_epoch_10.pth",help="Eval Model PATH")
     return parser.parse_args()
 
 def main(config):
     indexed_paths = create_index(config)
     run_retrieval(config, indexed_paths)
     
+    
 if __name__ == "__main__":
     args = parse_arguments()
     config = OmegaConf.load(args.config_path)
+    config.model_name = args.ckpt_name
     main(config)

@@ -9,21 +9,18 @@ trainer_config:
   eval_size: 16
   seed: 42
   accumulation_steps: 8 
-  # pretrained_clip_model_dir: "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"
   pretrained_clip_model_dir: ViT-L/14
   gradient_accumulation_steps: 1
   device: "cuda" 
   clip_grad_norm: 1.0
   use_amp: true 
   num_workers: 2 
-  merge: weight # weight mlp
+  merge: weight # score weight mlp
 
 model:
   ckpt_config: 
     ckpt_dir: "/workspace/MultiMR/checkpoint/"
   short_name: VIT-L-14/final
-  # short_name: ViT-B/32/score/simclr_false/
-  # short_name: biomedclip/score/simclr_false
   
 evaluator:
     enable_eval: False
@@ -37,8 +34,7 @@ dataset:
   validation_split: "validation" 
   simclr: False
   download_root: null # 
-  add_task: True
-  
+
 
 # --- Evaluation Configuration ---
 evaluation:

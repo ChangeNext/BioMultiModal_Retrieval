@@ -1,3 +1,4 @@
+### Generate test embedding index
 import sys
 import os
 current_script_path = os.path.abspath(__file__)
@@ -19,33 +20,29 @@ def build_model_from_config(config):
     model=None
     if model_config.merge== "score":
         from src.models.model import CLIPScoreFusion
-        # from src.models.biomodel import CLIPBIOcoreFusion
         model = CLIPScoreFusion(
             model_name=model_config.pretrained_clip_model_dir,
             device = config.device,
             )
     elif model_config.merge == "weight":
-        from src.model import CLIPWeightFusion
+        from src.models.model import CLIPWeightFusion
         model = CLIPWeightFusion(
             model_name=model_config.pretrained_clip_model_dir,
             device = config.device,
         )
     elif model_config.merge == "mlp":
-        from src.model import CLIPMLPFusion
+        from src.models.model import CLIPMLPFusion
         model = CLIPMLPFusion(
             model_name=model_config.pretrained_clip_model_dir,
             device = config.device,
         ) 
-    # model= accelerator.prepare(model)
     
     model.float()
     
     ckpt_config = model_config.ckpt_config
-    # accelerator.load_state(ckpt_config)
     checkpoint_path = os.path.join(config.mulimr_dir, ckpt_config.ckpt_dir, ckpt_config.ckpt_name)
     assert os.path.exists(checkpoint_path), f"Checkpoint file {checkpoint_path} does not exist."
     print(f"loading CLIPScoreFusion checkpoint from {checkpoint_path}")
-    # accelerator.load_state(ckpt_config)
     model.load_state_dict(torch.load(checkpoint_path, weights_only=False)["model"])
 
     return model
@@ -172,10 +169,15 @@ def main(config):
     
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Generate Embeddings")
-    parser.add_argument("--config_path", default="./config/embedding_config.yaml",help="Path to the config file.")
+    parser.add_argument("--config_path", default="./config/embedding.yaml",help="Path to the config file.")
+    parser.add_argument("--merge", default="weight",help="Merge Type")
+    parser.add_argument("--ckpt_name", default="vit-l-14/weight/_epoch_10.pth",help="Eval Model PATH")
+    
     return parser.parse_args()
     
 if __name__ == "__main__":
     args = parse_arguments()
     config = OmegaConf.load(args.config_path)
+    config.model.merge = args.merge
+    config.model.ckpt_config.ckpt_name = args.ckpt_name
     main(config)

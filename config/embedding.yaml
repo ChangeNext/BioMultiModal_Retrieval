@@ -1,0 +1,18 @@
+mulimr_dir: /workspace/MultiMR/
+embed_dir_name: embedding/
+#expt_name: VIT-L-14 #biomedclip clip
+
+model:
+  name: CLIPScoreFusion 
+  pretrained_clip_model_dir: ViT-L/14
+  merge: weight ##score weight mlp
+  ckpt_config: 
+    ckpt_dir: checkpoint/  
+    ckpt_name: vit-l-14/weight/_epoch_10.pth
+     
+dataset:
+  name: Jiiwonn/roco2-question-id-dataset
+
+split: test
+device: cuda
+

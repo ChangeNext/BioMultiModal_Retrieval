@@ -79,13 +79,13 @@ class CustomDatasetDictDataset(Dataset):
             selected_question = questions_list.strip()
         
         
-        if query_mode == "img_txt": # (이미지+질문) -> (이미지+텍스트)
+        if query_mode == "img_txt": #(image+query) -> (image+caption)
             query_txt = selected_question # 질문 사용
             query_img = self._load_and_preprocess_image(image_data) 
-        elif query_mode == "img_only": # (이미지) -> (이미지+텍스트)
+        elif query_mode == "img_only": #(image) -> (image+caption)
             query_txt = ""
             query_img = self._load_and_preprocess_image(image_data) 
-        elif query_mode == "txt_only": # (질문) -> (이미지+텍스트)
+        elif query_mode == "txt_only": #(query) -> (image+caption)
             query_txt = selected_question 
             query_img = None
         else:
@@ -168,25 +168,25 @@ class CustomDatasetDictDataset_(Dataset):
             selected_question = questions_list.strip()
         
         
-        if query_mode == "img_txt": # (이미지+질문) -> (이미지+텍스트)
-            query_txt = selected_question # 질문 사용
+        if query_mode == "img_txt": #(image+query) -> (image+caption)
+            query_txt = selected_question 
             query_img = query_image_tensor
-        elif query_mode == "img_only": # (이미지) -> (이미지+텍스트)
+        elif query_mode == "img_only": #(image) -> (image+caption)
             query_txt = ""
             query_img = query_image_tensor
-        elif query_mode == "txt_only": # (질문) -> (이미지+텍스트)
+        elif query_mode == "txt_only":  #(query) -> (image+caption)
             query_txt = selected_question 
             query_img = None
         else:
             raise ValueError(f"Unknown query mode: {query_mode}")
         
-        if query_mode_target == "img_txt": # (이미지+질문) -> (이미지+텍스트)
+        if query_mode_target == "img_txt": #(image+query) -> (image+caption)
             caption = caption_
             target_img = pos_cand_image_tensor 
-        elif query_mode_target == "img_only": # (이미지) -> (이미지+텍스트)
+        elif query_mode_target == "img_only": #(image) -> (image+caption)
             caption = ""
             target_img = pos_cand_image_tensor 
-        elif query_mode_target == "txt_only": # (질문) -> (이미지+텍스트)
+        elif query_mode_target == "txt_only":  #(query) -> (image+caption)
             caption = caption_
             target_img = None
         else:
@@ -358,17 +358,6 @@ class MainCollator(CollatorBase):
             "caption" : caption_list
         }
     
-        # if self.mode == Mode.EVAL:
-        #     if qid_list:
-        #         processed_batch.update({"qid_list": qid_list})
-        #     if task_id_list:
-        #         processed_batch.update({"task_id_list": task_id_list})
-
-        # if self.mode == Mode.TRAIN:
-        #     if p_did_list:
-        #         processed_batch.update({"p_did_list": torch.tensor(p_did_list)})
-
-        # TODO: Fix this hack for BLIP tokenizer.
         if hasattr(processed_batch["txt_batched"], "input_ids"):
             bs = processed_batch["txt_batched"]["input_ids"].size(0)
         else:

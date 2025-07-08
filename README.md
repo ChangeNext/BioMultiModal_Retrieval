@@ -20,7 +20,7 @@ from datasets import load_dataset
 dataset = load_dataset("Jiiwonn/roco2-question-id-dataset")
 ```
 
-## 🚀 Environment Setup
+## 🚀 Train
 ```python
 python3 train.py \
   --pretrained_clip_model_dir ViT-L/14 \
@@ -54,3 +54,4 @@ python3 demo.py \
   --merge weight \
   --ckpt_name vit-l-14/weight/_epoch_10.pth
 ```
+![이미지 설명](demo_image.png)

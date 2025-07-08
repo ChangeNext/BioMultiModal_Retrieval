@@ -3,6 +3,8 @@
 checkpoint/
 embedding/
 image/
+.cache_hf_to_nas/
+.tmp_hf_to_nas/
 retrieval_results/
 runs/
 .env

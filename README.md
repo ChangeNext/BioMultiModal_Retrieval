@@ -54,4 +54,4 @@ python3 demo.py \
   --merge weight \
   --ckpt_name vit-l-14/weight/_epoch_10.pth
 ```
-![이미지 설명](demo_image.png)
+![](demo_image.png)
